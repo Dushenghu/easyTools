@@ -4,6 +4,7 @@ import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sun.java2d.pipe.AAShapePipe;
 
 import java.util.Date;
 
@@ -17,8 +18,8 @@ public class easyDateUtil {
     private static final Logger logger = LoggerFactory.getLogger(easyDateUtil.class);
 
     //时间格式
-    public static final String FORMAT_YMDHMS = "YYYY-MM-DD HH:MM:SS";
-    public static final String FORMAT_YMD = "YYYY-MM-DD";
+    public static final String FORMAT_YMDHMS = "yyyy-MM-dd HH:mm:ss";
+    public static final String FORMAT_YMD = "yyyy-MM-dd";
 
     /**
       * 获取当前时间(joda-time)
@@ -26,6 +27,24 @@ public class easyDateUtil {
       */
     public static DateTime currentTime(){
         return new DateTime();
+    }
+
+    /**
+      * 获得当前已格式化的时间(格式：YYYY-MM-DD hh:mm:ss)
+      * @param
+      * @return   string
+      */
+    public static String now(){
+        return now(FORMAT_YMDHMS);
+    }
+
+    /**
+      * 获得当前格式化的时间
+      * @param  pattern 时间格式
+      * @return   String
+      */
+    public static String now(String pattern){
+        return currentTime().toString(pattern);
     }
 
     /**

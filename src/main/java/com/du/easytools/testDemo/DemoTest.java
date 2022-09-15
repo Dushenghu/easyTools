@@ -2,12 +2,14 @@ package com.du.easytools.testDemo;
 
 import com.du.easytools.common.bean.easyBeanUtil;
 import com.du.easytools.common.collection.easyCollectionUtil;
+import com.du.easytools.common.date.easyDateUtil;
 import com.du.easytools.common.string.easyStringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -51,6 +53,16 @@ public class DemoTest {
         logger.info("测试 ====== easyStringUtil.str2List");
         String str = "a,b,c,d";
         easyStringUtil.strList2Show(easyStringUtil.str2List(",",str));
+
+//        logger.info("测试 ====== Assert");
+//        User userAssert = new User();
+//        Assert.notNullPKId(userAssert.getName(),"用户姓名");
+
+        logger.info("测试 ====== easyDateUtil.currentTime");
+        System.out.println(easyDateUtil.time("2022-09-15 11:48:22"));
+
+        Date date = new Date();
+        System.out.println(easyDateUtil.time2Str(date,easyDateUtil.FORMAT_YMDHMS));
 
 
     }
