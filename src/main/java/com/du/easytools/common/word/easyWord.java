@@ -2,15 +2,14 @@ package com.du.easytools.common.word;
 
 
 
+import com.du.easytools.common.collection.easyCollectionUtil;
 import org.apache.poi.xwpf.usermodel.*;
-import org.apache.xmlbeans.SchemaType;
 import org.apache.xmlbeans.XmlCursor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 
 /**
@@ -29,9 +28,6 @@ public class easyWord {
 
         easyWord.copyTable(in,6);
 
-        //easyWord.testWord(filePath);
-        //easyWord.testWord(filePath);
-        //easyWord.copyTable(in,6,25);
     }
 
     public void testWord(String filePath){
@@ -66,7 +62,7 @@ public class easyWord {
                 cells = rows.get(i).getTableCells();
                 XWPFTableRow tableRow = table1.getRow(i);
 
-                copyStyleAndContext(rows.get(i),tableRow);
+                //copyStyleAndContext(rows.get(i),tableRow);
 
                 //System.out.println();
 
@@ -92,48 +88,62 @@ public class easyWord {
 
         XWPFTable table =null;
         List<XWPFTableRow> rows = null;
-        List<XWPFParagraph> paragraphs = doc.getParagraphs();
-
+        List<XWPFParagraph> paragraphs = doc.getParagraphs();//获得文档所有段落信息
         List<XWPFTable> tableList = doc.getTables();//得到文档所有表格数据
-
         XWPFTable targetTable = tableList.get(target-1);//得到要复制的表
-        rows = targetTable.getRows();
 
-        //替换新建表格
-        for (int p=50;p<paragraphs.size();p++){
-            XWPFParagraph paragraph = paragraphs.get(p);
-            String text=paragraph.getText();
-            if (text.contains("${mark_newTable}")){
+        //段落标识
+        int flag = 0;
 
-//
-                List<XWPFRun> Oldruns = paragraph.getRuns();
-                Oldruns.get(0).setText("\r",0);
+        for (int t=0;t<100;t++){
 
-                //移动游标，新建表格
-                XmlCursor cursor= paragraph.getCTP().newCursor();
-//                XmlCursor cursor1 = paragraph.getCTP().newCursor();
-//
-//                XWPFParagraph newP =doc.insertNewParagraph(cursor);
-//                XWPFRun newR = newP.createRun();
-//                newR.setText("\r");
+            rows = targetTable.getRows();
 
-                table = doc.insertNewTbl(cursor);
-                for(int i =1;i<rows.size();i++){
-                    table.createRow();
+            //复制表格
+            for (int p=50;p<paragraphs.size();p++){
+
+                XWPFParagraph paragraph = paragraphs.get(p);
+                String text=paragraph.getText();
+
+                if (("${mark_newTable").equals(text)){
+
+                    flag =p;
+
+                    //移动游标，新建表格
+                    XmlCursor cursor= paragraph.getCTP().newCursor();
+                    cursor.toNextSibling();
+
+                    XWPFParagraph nextParagraph = doc.insertNewParagraph(cursor);
+                    XWPFRun nextRun = nextParagraph.createRun();
+                    nextRun.setText("");
+
+                    XmlCursor nextcursor = nextParagraph.getCTP().newCursor();
+                    nextcursor.toNextSibling();
+
+                    table = doc.insertNewTbl(nextcursor);
+                    for(int i =1;i<rows.size();i++){
+                        table.createRow();
+                    }
+
+                    //复制表格格式与内容
+                    for (int i=0;i<rows.size();i++) {
+                        XWPFTableRow tableRow = table.getRow(i);
+                        copyStyleAndContext(rows.get(i),tableRow,t+1);
+                    }
+
+                    break;
                 }
-
-                //复制表格格式与内容
-                for (int i=0;i<rows.size();i++) {
-                    XWPFTableRow tableRow = table.getRow(i);
-                    copyStyleAndContext(rows.get(i),tableRow);
-                }
-
-                Oldruns.get(0).setText("\r",0);
-
 
             }
 
         }
+
+        //清空标识的段落
+        XWPFParagraph paragraph = paragraphs.get(flag);
+        paragraph.removeRun(0);
+
+        //删除原来模板
+        deleteTable(tableList.get(target-1));
 
         doc.write(out);
         out.close();
@@ -150,7 +160,7 @@ public class easyWord {
      * @param sourceRow
      * @param targetRow
      */
-    private void copyStyleAndContext(XWPFTableRow sourceRow, XWPFTableRow targetRow){
+    private void copyStyleAndContext(XWPFTableRow sourceRow, XWPFTableRow targetRow,int times){
         //复制行属性
         targetRow.getCtRow().setTrPr(sourceRow.getCtRow().getTrPr());
         List<XWPFTableCell> cellList = sourceRow.getTableCells();
@@ -169,8 +179,13 @@ public class easyWord {
             }
 
             //内容设置
-            //targetCell.setText(cellList.get(i).getText());
-            targetCell.setParagraph(cellList.get(i).getParagraphs().get(0));
+            List<XWPFParagraph> delPList = dealParagraphs(cellList.get(i).getParagraphs(),times);
+
+//            for (XWPFParagraph paragraph : delPList){
+//                System.out.println(paragraph.getRuns().get(0));
+//            }
+
+            targetCell.setParagraph(delPList.get(0));
 
             //列属性
             targetCell.getCTTc().setTcPr(cellList.get(i).getCTTc().getTcPr());
@@ -192,6 +207,56 @@ public class easyWord {
             table.removeRow(0);
         }
     }
+
+
+    /**
+     * 处理模板段落赋值变量
+     * @param paragraphList
+     */
+    public static List<XWPFParagraph> dealParagraphs (List<XWPFParagraph> paragraphList,int times){
+
+        //变量标识
+        String var = "var_";
+
+        List<XWPFRun> runs = null;
+
+        int deal = times;
+
+        if(easyCollectionUtil.isEmpty(paragraphList)){
+            return new ArrayList<XWPFParagraph>();
+        }
+
+        for(XWPFParagraph paragraph:paragraphList){
+
+            String text = null;
+
+            runs = paragraph.getRuns();
+            text = runs.get(0).getText(0);
+
+            if("".equals(text)||null==text){
+                    continue;
+            }
+
+            if (text.contains(var)){
+
+                if (times==1){
+
+                }else if (times>1 && times<=10){
+                    text = text.substring(0,text.length()-1);
+                }else if (times>10){
+                    text = text.substring(0,text.length()-2);
+                }
+
+                text = text.replace(text, text.toString()+String.valueOf(deal));
+                //System.out.println(text);
+                runs.get(0).setText(text,0);
+            }
+
+        }
+
+        return paragraphList;
+    }
+
 
 
 }
