@@ -26,7 +26,7 @@ public class easyWord {
         String filePath = "F:\\标准创新奖模板.docx";
         FileInputStream in = new FileInputStream(filePath);//载入文档
 
-        easyWord.copyTable(in,6);
+        easyWord.copyTable(in,6,2);
 
     }
 
@@ -78,8 +78,14 @@ public class easyWord {
         }
     }
 
-    //复制表格以完成模板的修改
-    public void copyTable(FileInputStream in,int target) throws IOException {
+    /**
+      * 复制表格以完成模板的修改
+      * @param  in
+      * @param  target
+      * @param  number
+      * @return
+      */
+    public void copyTable(FileInputStream in,int target,int number) throws IOException {
 
         long start = System.currentTimeMillis();
 
@@ -95,21 +101,21 @@ public class easyWord {
         //段落标识
         int flag = 0;
 
-        for (int t=0;t<100;t++){
+        for (int t=0;t<number;t++){
 
             rows = targetTable.getRows();
 
-            //复制表格
+            //根据段落匹配标识
             for (int p=50;p<paragraphs.size();p++){
 
                 XWPFParagraph paragraph = paragraphs.get(p);
                 String text=paragraph.getText();
 
+                //匹配标识
                 if (("${mark_newTable").equals(text)){
 
                     flag =p;
 
-                    //移动游标，新建表格
                     XmlCursor cursor= paragraph.getCTP().newCursor();
                     cursor.toNextSibling();
 
@@ -256,7 +262,5 @@ public class easyWord {
 
         return paragraphList;
     }
-
-
 
 }
