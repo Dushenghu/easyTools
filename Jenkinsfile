@@ -33,7 +33,7 @@ pipeline {
                 sshPublisher(
                     publishers: [
                         sshPublisherDesc(
-                            configName: 'prod-server',
+                            configName: 'myCentos7',
                             transfers: [
                                 sshTransfer(
                                     sourceFiles: "target/${JAR_NAME}",
