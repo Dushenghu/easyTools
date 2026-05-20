@@ -18,7 +18,13 @@ pipeline {
         stage('Build') {
             steps {
                 echo '====== 第二步：Maven编译打包 ======'
-                sh 'mvn clean package -DskipTests'
+                script {
+                    if (isUnix()) {
+                        sh 'mvn clean package -DskipTests'
+                    } else {
+                        bat 'mvn clean package -DskipTests'
+                }
+        }
             }
         }
         stage('Deploy') {
